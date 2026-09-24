@@ -20,7 +20,7 @@ const DEFAULT_TERMS = 'Prices valid for 7 days. Transportation extra. Subject to
 
 export default function Quotations() {
   const { id } = useParams(); const [params] = useSearchParams(); const navigate = useNavigate();
-  const building = Boolean(id || params.get('new')); const searchRef = useRef(null);
+  const building = Boolean(id || params.get('new')); const searchRef = useRef(null); const mobileTabsRef = useRef(null);
   const [quotes, setQuotes] = useState([]); const [products, setProducts] = useState([]); const [customers, setCustomers] = useState([]); const [setting, setSetting] = useState({});
   const [items, setItems] = useState([]); const [customerName, setCustomerName] = useState(''); const [customerPhone, setCustomerPhone] = useState(''); const [customerAddress, setCustomerAddress] = useState(''); const [customerId, setCustomerId] = useState('');
   const [validityDays, setValidityDays] = useState(7); const [terms, setTerms] = useState(DEFAULT_TERMS); const [notes, setNotes] = useState('');
@@ -28,6 +28,10 @@ export default function Quotations() {
   const [custom, setCustom] = useState({ name: '', qty: 1, price: '' });
   const [saved, setSaved] = useState(null); const [busy, setBusy] = useState(false); const [query, setQuery] = useState(''); const [status, setStatus] = useState('all');
   const [mobileTab, setMobileTab] = useState('products');
+  const changeMobileTab = next => {
+    setMobileTab(next);
+    window.requestAnimationFrame(() => mobileTabsRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' }));
+  };
   const summary = useMemo(() => calculateCart(items, discountType, discountValue, '27', includeGst), [items, discountType, discountValue, includeGst]);
   const refresh = () => api.get('/quotations').then(r => setQuotes(r.data)).catch(err => toast.error(errorText(err)));
 
@@ -102,7 +106,7 @@ export default function Quotations() {
     </div>
     <div className="data-table-scroll"><table className="data-table" data-testid="quotations-table">
       <thead><tr><th>Quotation</th><th>Customer</th><th>Date</th><th>Valid until</th><th>Type</th><th>Amount</th><th>Status</th><th /></tr></thead>
-      <tbody>{filtered.length ? filtered.map(q => <tr key={q.id} data-testid={`quotation-row-${q.id}`} onClick={() => navigate(`/admin/quotations/${q.id}`)}>
+      <tbody>{filtered.length ? filtered.map(q => <tr key={q.id} data-testid={`quotation-row-${q.id}`} role="link" tabIndex={0} aria-label={`Open quotation ${q.number}`} onClick={() => navigate(`/admin/quotations/${q.id}`)} onKeyDown={e => { if (e.key === 'Enter') navigate(`/admin/quotations/${q.id}`); }}>
         <td className="mono strong">{q.number}</td><td><strong>{q.customerName}</strong>{q.customerPhone && <small className="table-sub">{q.customerPhone}</small>}</td><td>{dateOnly(q.date)}</td><td>{dateOnly(q.validUntil)}</td>
         <td><span className={`doc-pill ${q.includeGst ? 'gst' : ''}`}>{q.includeGst ? 'With GST' : 'Estimate'}</span></td><td className="mono strong">{currency(q.grandTotal)}</td><td><span className={`status-pill ${q.status}`}>{q.status}</span></td><td><ArrowRight size={17} /></td>
       </tr>) : <tr><td colSpan="8"><div className="table-empty"><FileText size={30} /><strong>No quotations yet</strong><span>Create one to get started.</span></div></td></tr>}</tbody>
@@ -115,9 +119,9 @@ export default function Quotations() {
       <div><button type="button" className="back-link" data-testid="quote-back-button" onClick={() => navigate('/admin/quotations')}><ArrowLeft size={15} /> All quotations</button><h1>{id ? 'Edit quotation' : 'New quotation'}<span className="title-dot">.</span></h1><p>{saved?.number || 'Build a quote your customer can count on.'}</p></div>
       <span className={`status-pill ${saved?.status || 'draft'}`} data-testid="quotation-current-status">{saved?.status || 'draft'}</span>
     </div>
-    <MobileTabs tab={mobileTab} onChange={setMobileTab} count={items.length} billLabel="Quotation" />
+    <MobileTabs tab={mobileTab} onChange={changeMobileTab} count={items.length} billLabel="Quotation" tabsRef={mobileTabsRef} />
     <div className="pos-layout" data-tab={mobileTab}>
-      <ProductSearch products={products} onAdd={add} searchRef={searchRef} title="Add products" />
+      <ProductSearch products={products} onAdd={add} searchRef={searchRef} title="Add products" destination="quotation" />
       <div className="bill-panel quote-panel" data-testid="quote-panel">
         <div className="bill-panel-head">
           <div className="bill-heading">
@@ -176,6 +180,6 @@ export default function Quotations() {
         </div>
       </div>
     </div>
-    {mobileTab === 'products' && <FloatingCartBar count={items.length} total={summary.grandTotal} onClick={() => setMobileTab('bill')} label="View quotation" />}
+    {mobileTab === 'products' && <FloatingCartBar count={items.length} total={summary.grandTotal} onClick={() => changeMobileTab('bill')} label="View quotation" />}
   </div>;
 }

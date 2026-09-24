@@ -20,7 +20,7 @@ const beep = () => { try { const ctx = new (window.AudioContext || window.webkit
 
 export default function Billing() {
   const navigate = useNavigate();
-  const draft = useRef(initial()); const searchRef = useRef(null);
+  const draft = useRef(initial()); const searchRef = useRef(null); const mobileTabsRef = useRef(null);
   const [products, setProducts] = useState([]); const [customers, setCustomers] = useState([]); const [setting, setSetting] = useState({});
   const [items, setItems] = useState(draft.current.items || []); const [recent, setRecent] = useState([]);
   const [customerId, setCustomerId] = useState(draft.current.customerId || '');
@@ -38,6 +38,10 @@ export default function Billing() {
   const [busy, setBusy] = useState(false); const [idempotencyKey, setIdempotencyKey] = useState(draft.current.idempotencyKey || makeKey());
   const [resumedId, setResumedId] = useState(null); const [offlinePrint, setOfflinePrint] = useState(false);
   const [mobileTab, setMobileTab] = useState('products');
+  const changeMobileTab = next => {
+    setMobileTab(next);
+    window.requestAnimationFrame(() => mobileTabsRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' }));
+  };
 
   const chosen = customers.find(c => c.id === customerId);
   const actualState = chosen?.gstin?.slice(0, 2) || stateCode;
@@ -52,10 +56,12 @@ export default function Billing() {
     api.get('/customers').then(r => setCustomers(r.data)).catch(() => {});
     api.get('/settings').then(r => setSetting(r.data || {})).catch(() => {});
     refreshNumber(); refreshHeld();
-    setTimeout(() => searchRef.current?.focus(), 200);
+    const focusTimer = setTimeout(() => {
+      if (!window.matchMedia('(max-width: 800px), (pointer: coarse)').matches) searchRef.current?.focus({ preventScroll: true });
+    }, 200);
     const online = () => syncOfflineBills().then(count => count && toast.success(`${count} offline bill${count > 1 ? 's' : ''} synced`));
     window.addEventListener('online', online); if (navigator.onLine) online();
-    return () => window.removeEventListener('online', online);
+    return () => { clearTimeout(focusTimer); window.removeEventListener('online', online); };
   }, []);
   useEffect(() => {
     const timer = setInterval(() => localStorage.setItem('asian-bill-draft', JSON.stringify({ items, customerId, store, paymentMode, amountReceived, discountType, discountValue, stateCode, idempotencyKey, includeGst })), 5000);
@@ -75,7 +81,8 @@ export default function Billing() {
   const removeItem = key => { setItems(old => old.filter(i => i.key !== key)); dirty(); };
   const reset = () => {
     setItems([]); setCustomerId(''); setStore('Store 1'); setPaymentMode('Cash'); setAmountReceived(''); setUpiTransactionId(''); setDiscountValue(0); setDiscountType('amount'); setStateCode('27'); setIncludeGst(false);
-    setSaved(null); setResumedId(null); setIdempotencyKey(makeKey()); localStorage.removeItem('asian-bill-draft'); refreshNumber(); setMobileTab('products'); searchRef.current?.focus();
+    setSaved(null); setResumedId(null); setIdempotencyKey(makeKey()); localStorage.removeItem('asian-bill-draft'); refreshNumber(); setMobileTab('products');
+    if (!window.matchMedia('(max-width: 800px), (pointer: coarse)').matches) searchRef.current?.focus({ preventScroll: true });
   };
   const payload = () => ({
     items: items.map(({ productId, name, quantity, unitPrice, discountType: dt, discountValue: dv, gstRate, remarks }) => ({ productId, name, quantity: Number(quantity), unitPrice: Number(unitPrice), discountType: dt, discountValue: Number(dv), gstRate, remarks })),
@@ -111,7 +118,7 @@ export default function Billing() {
     if (items.length && !window.confirm('Replace the current draft with this held bill?')) return;
     const d = entry.draft;
     setItems(d.items.map(i => ({ ...i, key: makeKey() }))); setCustomerId(d.customerId || ''); setStore(d.store || 'Store 1'); setPaymentMode(d.paymentMode || 'Cash'); setAmountReceived(d.amountReceived ?? ''); setStateCode(d.stateCode || '27');
-    setDiscountType(d.overallDiscountType || 'amount'); setDiscountValue(d.overallDiscountValue || 0); setIncludeGst(Boolean(d.includeGst)); setIdempotencyKey(makeKey()); setResumedId(entry.id); setShowHeld(false); setSaved(null); setMobileTab('bill'); searchRef.current?.focus();
+    setDiscountType(d.overallDiscountType || 'amount'); setDiscountValue(d.overallDiscountValue || 0); setIncludeGst(Boolean(d.includeGst)); setIdempotencyKey(makeKey()); setResumedId(entry.id); setShowHeld(false); setSaved(null); setMobileTab('bill');
   };
   const createCustomer = async e => {
     e.preventDefault();
@@ -154,7 +161,7 @@ export default function Billing() {
       <button type="button" data-testid="last-bill-open-button" onClick={() => navigate(`/admin/bills/${lastSaved.id}`)}>View in history</button>
     </div>}
 
-    <MobileTabs tab={mobileTab} onChange={setMobileTab} count={items.length} />
+    <MobileTabs tab={mobileTab} onChange={changeMobileTab} count={items.length} tabsRef={mobileTabsRef} />
     <div className="pos-layout" data-tab={mobileTab}>
       <ProductSearch products={products} onAdd={add} recent={recent} searchRef={searchRef} />
       <div className="bill-panel" data-testid="bill-panel">
@@ -210,7 +217,7 @@ export default function Billing() {
         </div>
       </div>
     </div>
-    {mobileTab === 'products' && <FloatingCartBar count={items.length} total={summary.grandTotal} onClick={() => setMobileTab('bill')} />}
+    {mobileTab === 'products' && <FloatingCartBar count={items.length} total={summary.grandTotal} onClick={() => changeMobileTab('bill')} />}
 
     {showCustomer && <div className="modal-backdrop" data-testid="inline-customer-modal" onClick={e => { if (e.target === e.currentTarget) setShowCustomer(false); }}>
       <form className="app-modal" onSubmit={createCustomer} data-testid="inline-customer-form">

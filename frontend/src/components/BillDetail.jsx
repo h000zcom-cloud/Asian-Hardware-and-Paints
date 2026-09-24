@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { ArrowRightLeft, Ban, Copy, Download, FilePlus2, MessageCircle, Printer, StickyNote, X } from 'lucide-react';
 import { api, currency, dateTime, downloadPdf, errorText, printPdf, whatsappText } from '../lib/api';
@@ -12,10 +13,35 @@ const MODE_LABELS = { Cash: 'Cash', UPI: 'UPI / GPay', Card: 'Card', Credit: 'Kh
 
 export const BillDetail = ({ id, setting = {}, onClose, onChanged }) => {
   const [bill, setBill] = useState(null); const [cancelling, setCancelling] = useState(false); const [reason, setReason] = useState('');
-  const [note, setNote] = useState(''); const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState(''); const [busy, setBusy] = useState(false); const [moreActions, setMoreActions] = useState(false);
+  const dialogRef = useRef(null); const closeRef = useRef(null);
   const load = () => api.get(`/billing/${id}`).then(r => setBill(r.data)).catch(err => { toast.error(errorText(err)); onClose(); });
   useEffect(() => { load(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { const esc = e => e.key === 'Escape' && onClose(); document.addEventListener('keydown', esc); return () => document.removeEventListener('keydown', esc); }, [onClose]);
+  useEffect(() => {
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    const appRoot = document.querySelector('.admin-app');
+    const previousInert = appRoot?.inert;
+    document.body.style.overflow = 'hidden';
+    if (appRoot) appRoot.inert = true;
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (appRoot) appRoot.inert = previousInert;
+      previousFocus?.focus?.({ preventScroll: true });
+    };
+  }, []);
+  useEffect(() => { closeRef.current?.focus({ preventScroll: true }); }, [bill?.id]);
+  useEffect(() => {
+    const keyDown = e => {
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+      if (e.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = [...dialogRef.current.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href]')].filter(el => el.getClientRects().length);
+      if (!focusable.length) return;
+      if (e.shiftKey && document.activeElement === focusable[0]) { e.preventDefault(); focusable[focusable.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === focusable[focusable.length - 1]) { e.preventDefault(); focusable[0].focus(); }
+    };
+    document.addEventListener('keydown', keyDown); return () => document.removeEventListener('keydown', keyDown);
+  }, [onClose]);
 
   const changed = data => { setBill(data); onChanged?.(); };
   const print = format => printPdf(`/billing/${id}/pdf?format=${format}`, `${bill.number}.pdf`, null, bill.number).then(() => load()).then(onChanged).catch(err => toast.error(errorText(err)));
@@ -35,28 +61,32 @@ export const BillDetail = ({ id, setting = {}, onClose, onChanged }) => {
   };
   const copyNumber = () => navigator.clipboard?.writeText(bill.number).then(() => toast.success('Bill number copied')).catch(() => {});
 
-  if (!bill) return <div className="modal-backdrop"><div className="app-modal bill-detail" data-testid="bill-detail-loading"><div className="customer-loading-bar" /><div className="customer-loading-bar short" /></div></div>;
+  if (!bill) return createPortal(<div className="modal-backdrop bill-detail-backdrop" onClick={e => e.target === e.currentTarget && onClose()}><div className="app-modal bill-detail" ref={dialogRef} data-testid="bill-detail-loading" role="dialog" aria-modal="true" aria-label="Loading bill"><div className="bill-detail-head"><h2>Loading bill…</h2><button type="button" className="icon-button bill-detail-close" ref={closeRef} aria-label="Close bill details" onClick={onClose}><X size={20} /></button></div><div role="status" aria-label="Loading bill"><div className="customer-loading-bar" /><div className="customer-loading-bar short" /></div></div></div>, document.body);
   const gst = Boolean(bill.includeGst); const pieces = bill.items.reduce((sum, item) => sum + item.quantity, 0);
   const events = [...(bill.events || [])].reverse();
   const printFormat = setting.printFormat || 'thermal';
 
-  return <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
-    <div className="app-modal bill-detail" data-testid="bill-detail-modal" role="dialog" aria-modal="true" aria-label={`Bill ${bill.number}`}>
+  return createPortal(<div className="modal-backdrop bill-detail-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="app-modal bill-detail" ref={dialogRef} data-testid="bill-detail-modal" role="dialog" aria-modal="true" aria-label={`Bill ${bill.number}`}>
       <div className="bill-detail-head">
         <div>
           <div className="bill-detail-pills"><span className={`doc-pill ${gst ? 'gst' : ''}`} data-testid="bill-detail-type">{bill.documentType || (gst ? 'TAX INVOICE' : 'ESTIMATE / CASH MEMO')}</span><span className={`status-pill ${bill.status}`} data-testid="bill-detail-status">{bill.status}</span></div>
           <h2 data-testid="bill-detail-number">{bill.number}<button type="button" className="copy-button" title="Copy bill number" aria-label="Copy bill number" data-testid="bill-detail-copy-button" onClick={copyNumber}><Copy size={15} /></button></h2>
           <p data-testid="bill-detail-meta">{dateTime(bill.date)} · {bill.store} · by {bill.createdBy || 'admin'}{bill.sourceQuotationNumber ? ` · from ${bill.sourceQuotationNumber}` : ''}</p>
         </div>
-        <button type="button" className="icon-button" aria-label="Close" data-testid="bill-detail-close-button" onClick={onClose}><X size={20} /></button>
+        <button type="button" className="icon-button bill-detail-close" ref={closeRef} aria-label="Close bill details" data-testid="bill-detail-close-button" onClick={onClose}><X size={20} /></button>
       </div>
 
+      <div className="bill-detail-mobile-summary"><span>Total · {bill.items.length} item{bill.items.length !== 1 ? 's' : ''}</span><strong>{currency(bill.grandTotal)}</strong><small>{bill.customerName || 'Walk-in Customer'}</small></div>
       <div className="bill-detail-actions">
         <Button data-testid="bill-detail-print-button" onClick={() => print(printFormat)}><Printer size={16} /> Print {printFormat === 'thermal' ? 'receipt' : printFormat.toUpperCase()}</Button>
-        {printFormat !== 'a4' && <Button variant="outline" data-testid="bill-detail-print-a4-button" onClick={() => print('a4')}><Printer size={16} /> Print A4</Button>}
-        <Button variant="outline" data-testid="bill-detail-download-button" onClick={download}><Download size={16} /> Download A4</Button>
         <Button variant="outline" className="whatsapp" data-testid="bill-detail-whatsapp-button" onClick={share}><MessageCircle size={16} /> WhatsApp</Button>
-        {bill.status === 'completed' && <Button variant="outline" className="danger" data-testid="bill-detail-cancel-button" onClick={() => setCancelling(true)}><Ban size={16} /> Cancel bill</Button>}
+        <button type="button" className="bill-detail-more-toggle" aria-expanded={moreActions} onClick={() => setMoreActions(value => !value)}>{moreActions ? 'Fewer actions' : 'More actions'}</button>
+        <div className={`bill-detail-secondary-actions ${moreActions ? 'is-open' : ''}`}>
+          {printFormat !== 'a4' && <Button variant="outline" data-testid="bill-detail-print-a4-button" onClick={() => print('a4')}><Printer size={16} /> Print A4</Button>}
+          <Button variant="outline" data-testid="bill-detail-download-button" onClick={download}><Download size={16} /> Download A4</Button>
+          {bill.status === 'completed' && <Button variant="outline" className="danger" data-testid="bill-detail-cancel-button" onClick={() => { setCancelling(true); setMoreActions(false); }}><Ban size={16} /> Cancel bill</Button>}
+        </div>
       </div>
 
       {cancelling && <div className="cancel-box" data-testid="bill-cancel-box">
@@ -87,7 +117,7 @@ export const BillDetail = ({ id, setting = {}, onClose, onChanged }) => {
         </section>
       </div>
 
-      <div className="data-table-scroll rounded" data-testid="bill-detail-items">
+      <div className="data-table-scroll rounded bill-detail-item-table" data-testid="bill-detail-items">
         <table className="data-table compact">
           <thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Disc.</th>{gst && <><th>Taxable</th><th>GST</th></>}<th>Amount</th></tr></thead>
           <tbody>{bill.items.map((item, index) => <tr key={`${item.productId || item.productName}-${index}`} className="static">
@@ -101,6 +131,14 @@ export const BillDetail = ({ id, setting = {}, onClose, onChanged }) => {
           </tr>)}</tbody>
         </table>
       </div>
+      <section className="bill-detail-item-list" aria-label="Bill items">
+        <h3>Items <span>{pieces} {pieces === 1 ? 'piece' : 'pieces'}</span></h3>
+        {bill.items.map((item, index) => <div className="bill-detail-item" key={`${item.productId || item.productName}-${index}`}>
+          <div className="bill-detail-item-title"><span>{index + 1}</span><strong>{item.productName}</strong><b>{currency(item.totalAmount)}</b></div>
+          <div className="bill-detail-item-meta"><span>{item.quantity} {item.unit === 'Piece' ? 'pcs' : item.unit} × {currency(item.unitPrice)}</span>{item.itemDiscount > 0 && <span>Discount −{currency(item.itemDiscount)}</span>}{gst && <><span>Taxable {currency(item.taxableAmount)}</span><span>GST {item.gstRate}% · {currency(item.gstAmount ?? (item.totalAmount - item.taxableAmount))}</span></>}</div>
+          {(item.remarks || (gst && item.hsnCode)) && <small>{[gst && item.hsnCode ? `HSN ${item.hsnCode}` : '', item.remarks].filter(Boolean).join(' · ')}</small>}
+        </div>)}
+      </section>
 
       <div className="bill-detail-totals" data-testid="bill-detail-totals">
         <div className="bill-totals">
@@ -125,5 +163,5 @@ export const BillDetail = ({ id, setting = {}, onClose, onChanged }) => {
         <form className="note-form" onSubmit={addNote}><Input placeholder="Add a note to this bill (e.g. delivered on Monday)" value={note} data-testid="bill-note-input" onChange={e => setNote(e.target.value)} /><Button type="submit" variant="outline" disabled={!note.trim()} data-testid="bill-note-submit-button"><StickyNote size={15} /> Add note</Button></form>
       </section>
     </div>
-  </div>;
+  </div>, document.body);
 };

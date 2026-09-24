@@ -13,7 +13,7 @@ const StockBadge = ({ product }) => {
   return <span className="stock-badge in">In Stock · {product.currentStock}</span>;
 };
 
-export const ProductSearch = ({ products = [], onAdd, recent = [], searchRef, title = 'Find a product' }) => {
+export const ProductSearch = ({ products = [], onAdd, recent = [], searchRef, title = 'Find a product', destination = 'bill' }) => {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
   const [category, setCategory] = useState('');
@@ -22,7 +22,18 @@ export const ProductSearch = ({ products = [], onAdd, recent = [], searchRef, ti
   const categories = useMemo(() => categoryCounts(products), [products]);
   const results = useMemo(() => filterProducts(products, query, category), [products, query, category]);
 
-  const add = product => { onAdd(product); setQuery(''); setSelected(0); ref.current?.focus(); };
+  const add = product => {
+    onAdd(product);
+    const touchLayout = window.matchMedia('(max-width: 800px), (pointer: coarse)').matches;
+    // Keeping the search focused after a tap reopens the phone keyboard and
+    // moves the viewport away from the product the cashier just selected.
+    if (touchLayout) {
+      if (document.activeElement === ref.current) ref.current.blur();
+    } else {
+      setQuery(''); setSelected(0);
+      ref.current?.focus({ preventScroll: true });
+    }
+  };
   const keyDown = event => {
     if (event.key === 'ArrowDown') { event.preventDefault(); setSelected(i => Math.min(results.length - 1, i + 1)); }
     if (event.key === 'ArrowUp') { event.preventDefault(); setSelected(i => Math.max(0, i - 1)); }
@@ -37,7 +48,7 @@ export const ProductSearch = ({ products = [], onAdd, recent = [], searchRef, ti
     </div>
     <div className="search-field">
       <Search size={20} />
-      <Input ref={ref} autoFocus value={query} onChange={e => { setQuery(e.target.value); setSelected(0); }} onKeyDown={keyDown} placeholder="Type product name (e.g. Grinding wheel, PU foam, CPVC...)" data-testid="product-search-input" />
+      <Input ref={ref} value={query} onChange={e => { setQuery(e.target.value); setSelected(0); }} onKeyDown={keyDown} placeholder="Search products" aria-label="Search products by name, code or category" data-testid="product-search-input" />
       <kbd>F2</kbd>
     </div>
     <div className="category-pills" data-testid="category-pills">
@@ -50,11 +61,12 @@ export const ProductSearch = ({ products = [], onAdd, recent = [], searchRef, ti
     </div>
     <div className="search-results" data-testid="product-search-results">
       {results.length ? results.map((p, index) => (
-        <div role="button" tabIndex={0} key={p.id} className={`product-row ${selected === index ? 'selected' : ''}`} data-testid={`product-result-${p.sku || p.id}`}
-          onClick={() => add(p)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); add(p); } }} onMouseEnter={() => setSelected(index)}>
-          <div className="product-row-main"><strong>{p.name}</strong><small>{p.category}{p.sku ? ` · ${p.sku}` : ''}</small></div>
-          <div className="product-row-side"><StockBadge product={p} /><strong className="product-price" data-testid={`product-price-${p.sku || p.id}`}>{price(p.salePrice)}</strong></div>
-          <button type="button" className="add-button" aria-label={`Add ${p.name}`} data-testid={`product-add-${p.sku || p.id}`} onClick={e => { e.stopPropagation(); add(p); }}><Plus size={18} /><span>Add</span></button>
+        <div key={p.id} className={`product-row ${selected === index ? 'selected' : ''}`} data-testid={`product-result-${p.sku || p.id}`} onMouseEnter={() => setSelected(index)}>
+          <button type="button" className="product-row-select" aria-label={`Add ${p.name} to ${destination}`} onClick={() => add(p)}>
+            <span className="product-row-main"><strong>{p.name}</strong><small>{p.category}{p.sku ? ` · ${p.sku}` : ''}</small></span>
+            <span className="product-row-side"><StockBadge product={p} /><strong className="product-price" data-testid={`product-price-${p.sku || p.id}`}>{price(p.salePrice)}</strong></span>
+          </button>
+          <button type="button" className="add-button" aria-label={`Add ${p.name}`} data-testid={`product-add-${p.sku || p.id}`} onClick={() => add(p)}><Plus size={18} /><span>Add</span></button>
         </div>
       )) : <div className="empty-search" data-testid="product-search-empty"><PackageX size={24} /><strong>No matching products</strong><span>Try a different name, code or category.</span></div>}
     </div>

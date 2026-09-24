@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, ReceiptText, History, FileText, Boxes, UsersRound, ChartNoAxesCombined, Settings2, LogOut, Menu, Plus, ChevronRight, X } from 'lucide-react';
 import { Button } from './ui/button';
@@ -14,6 +14,18 @@ const nav = [
 export default function AdminShell({ user, onLogout }) {
   const [open, setOpen] = useState(false);
   const location = useLocation(); const navigate = useNavigate();
+  const previousPath = useRef('');
+  useLayoutEffect(() => {
+    const isBillHistory = path => /^\/admin\/bills(?:\/[^/]+)?$/.test(path);
+    if (!(isBillHistory(previousPath.current) && isBillHistory(location.pathname))) {
+      const previousBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(0, 0);
+      document.documentElement.style.scrollBehavior = previousBehavior;
+    }
+    previousPath.current = location.pathname;
+    setOpen(false);
+  }, [location.pathname]);
   const current = nav.find(([, url]) => url === location.pathname) || nav.find(([, url]) => url !== '/admin' && location.pathname.startsWith(url)) || nav[0];
   return <div className="admin-app">
     <aside className={`admin-sidebar ${open ? 'is-open' : ''}`} data-testid="admin-sidebar">
@@ -24,7 +36,7 @@ export default function AdminShell({ user, onLogout }) {
     </aside>
     {open && <button className="sidebar-backdrop" data-testid="sidebar-backdrop-button" aria-label="Close navigation" onClick={() => setOpen(false)} />}
     <div className="admin-main">
-      <header className="admin-header"><div className="header-start"><button className="icon-button menu-toggle" data-testid="open-sidebar-button" aria-label="Open navigation" onClick={() => setOpen(true)}><Menu size={21}/></button><span className="crumb-parent">WORKSPACE</span><ChevronRight size={14} className="crumb-chevron"/><span className="crumb-current" data-testid="current-page-name">{current[0]}</span></div><div className="header-actions"><Button variant="outline" size="sm" onClick={() => navigate('/admin/quotations?new=1')} data-testid="header-new-quote-button" className="header-secondary"><FileText size={15}/> New quote</Button><Button size="sm" onClick={() => navigate('/admin/billing')} data-testid="header-new-bill-button" className="header-primary"><Plus size={16}/> New bill</Button><span className="header-divider"/><span className="user-avatar" title={user?.name || 'Store Owner'} data-testid="header-user-avatar">AH</span><button className="icon-button signout" title="Sign out" data-testid="header-signout-button" onClick={onLogout}><LogOut size={18}/></button></div></header>
+      <header className="admin-header"><div className="header-start"><button className="icon-button menu-toggle" data-testid="open-sidebar-button" aria-label="Open navigation" onClick={() => setOpen(true)}><Menu size={21}/></button><span className="crumb-parent">WORKSPACE</span><ChevronRight size={14} className="crumb-chevron"/><span className="crumb-current" data-testid="current-page-name">{current[0]}</span></div><div className="header-actions"><Button variant="outline" size="sm" onClick={() => navigate('/admin/quotations?new=1')} data-testid="header-new-quote-button" className="header-secondary"><FileText size={15}/> New quote</Button>{current[0] !== 'Billing' && <Button size="sm" onClick={() => navigate('/admin/billing')} data-testid="header-new-bill-button" className="header-primary"><Plus size={16}/> New bill</Button>}<span className="header-divider"/><span className="user-avatar" title={user?.name || 'Store Owner'} data-testid="header-user-avatar">AH</span><button className="icon-button signout" title="Sign out" data-testid="header-signout-button" onClick={onLogout}><LogOut size={18}/></button></div></header>
       <main className="admin-content"><Outlet/></main>
     </div>
   </div>;

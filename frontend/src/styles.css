@@ -384,6 +384,7 @@ kbd { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; col
 .results-head span:first-child { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .search-results { max-height: calc(100vh - 420px); min-height: 220px; overflow: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; }
 .product-row { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; border-radius: 16px; border: 1px solid var(--line-soft); background: var(--surface); text-align: left; cursor: pointer; min-height: 66px; }
+.product-row-select { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; background: none; text-align: left; }
 .product-row:hover, .product-row.selected { border-color: var(--blue-200); background: var(--blue-50); box-shadow: var(--shadow); }
 .product-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .product-row-main strong { font-size: 14px; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; line-height: 1.3; }
@@ -516,7 +517,7 @@ kbd { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; col
 .quote-status-actions button.active { color: var(--blue-dark); border-color: var(--blue-200); background: var(--blue-50); }
 
 /* Mobile POS tabs & floating bar ------------------------------------------- */
-.mobile-tabs { display: none; }
+.mobile-tabs, .mobile-tabs-anchor { display: none; }
 .floating-cart-bar { display: none; }
 
 /* ==========================================================================
@@ -677,12 +678,13 @@ kbd { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; col
 .row-actions > svg { color: var(--muted-2); vertical-align: middle; margin-left: 6px; }
 .bill-cards { display: none; }
 .bill-card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 18px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; cursor: pointer; }
+.bill-card-open { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 0; background: none; border: 0; text-align: left; color: inherit; }
 .bill-card.is-cancelled { opacity: .7; }
 .bill-card.is-cancelled .bill-card-top > strong { text-decoration: line-through; }
 .bill-card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; }
 .bill-card-mid { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
-.bill-card-mid > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.bill-card-mid > div strong { font-size: 15px; font-weight: 700; }
+.bill-card-mid > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bill-card-mid > span strong { font-size: 15px; font-weight: 700; }
 .bill-card-mid small { font-size: 12px; color: var(--muted); }
 .bill-card-total { font-family: var(--font-display); font-size: 18px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .bill-card-actions { display: flex; align-items: center; gap: 6px; border-top: 1px dashed var(--line); padding-top: 10px; }
@@ -696,6 +698,8 @@ kbd { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; col
 .copy-button { border: 0; background: var(--bg); color: var(--muted); width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; }
 .copy-button:hover { color: var(--blue); background: var(--blue-50); }
 .bill-detail-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 16px 26px; background: var(--bg); border-bottom: 1px solid var(--line-soft); }
+.bill-detail-secondary-actions { display: contents; }
+.bill-detail-more-toggle, .bill-detail-mobile-summary, .bill-detail-item-list { display: none; }
 .bill-detail-actions button.whatsapp { color: #15803d !important; border-color: #bbf7d0 !important; background: #f0fdf4 !important; }
 .bill-detail-actions button.danger { color: var(--red-700) !important; border-color: var(--red-200) !important; background: var(--surface) !important; margin-left: auto; }
 .bill-detail-actions button.danger:hover { background: var(--red-50) !important; }
@@ -891,6 +895,126 @@ kbd { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; col
   .app-modal { padding: 20px; border-radius: 20px; }
   .report-range > span { width: 100%; }
   .login-side { padding: 30px 22px; } .login-brand { margin-bottom: 56px; }
+}
+/* Touch counter and admin detail refinements */
+@media (max-width: 800px) {
+  .admin-app { min-height: 100dvh; }
+  .admin-content { min-width: 0; }
+  .admin-app input:not([type=checkbox]):not([type=file]):not([type=range]),
+  .admin-app textarea, .admin-app select, .app-modal input, .app-modal select, .app-modal textarea { font-size: 16px !important; }
+  .admin-app .search-field input, .admin-app .mini-input input, .admin-app .mini-input select,
+  .admin-app .bill-discount-row input, .admin-app .bill-discount-row select { font-size: 16px !important; }
+  .search-field kbd, .keyboard-hint { display: none; }
+  .mobile-tabs-anchor { display: block; scroll-margin-top: 72px; }
+  .mobile-tabs { position: sticky; top: 62px; z-index: 35; }
+  .floating-cart-bar { bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; right: 12px; min-height: 62px; }
+  .floating-cart-bar > span { padding: 0 12px; }
+  .product-row { min-height: 72px; }
+  .product-row-select { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .product-row-side { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 5px 8px; }
+  .product-row-main small { white-space: normal; }
+  .bill-panel { overflow: visible; }
+  .cart-items { max-height: none; overflow: visible; }
+  .cart-item-controls { align-items: stretch; }
+  .mini-input { min-width: 0; }
+  .grand-total { min-width: 0; }
+  .grand-total strong { white-space: normal; text-align: right; overflow-wrap: anywhere; }
+  .bills-filters .table-search input { min-width: 0; }
+  .bills-page .page-title-actions [data-testid="bills-new-bill-button"] { display: none; }
+  .range-pills { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+  .range-pills button { flex: none; min-height: 44px; }
+  .filter-selects select { flex: 1 1 calc(50% - 8px); }
+  .bill-card { cursor: default; }
+  .bill-card-open { min-height: 68px; }
+  .bill-card-actions { flex-wrap: wrap; }
+  .bill-card-actions .doc-pill, .bill-card-actions .status-pill { max-width: 100%; }
+  .table-footer { align-items: stretch; }
+  .table-footer > div { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+  .table-footer button { min-height: 44px; }
+  .table-tools .table-search { flex-basis: 100%; max-width: none; min-width: 0; }
+  .table-tools select { flex: 1 1 44%; min-width: 0; }
+  /* Operational lists read as cards on a phone instead of tiny sideways tables. */
+  [data-testid="inventory-table"], [data-testid="customer-table"], [data-testid="quotations-table"] { display: block; min-width: 0; }
+  [data-testid="inventory-table"] thead, [data-testid="customer-table"] thead, [data-testid="quotations-table"] thead { display: none; }
+  [data-testid="inventory-table"] tbody, [data-testid="customer-table"] tbody, [data-testid="quotations-table"] tbody { display: grid; gap: 10px; padding: 10px; background: var(--bg); }
+  [data-testid="inventory-table"] tbody tr, [data-testid="customer-table"] tbody tr, [data-testid="quotations-table"] tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; position: relative; padding: 14px; border: 1px solid var(--line-soft); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); }
+  [data-testid="inventory-table"] tbody td, [data-testid="customer-table"] tbody td, [data-testid="quotations-table"] tbody td { display: block; min-width: 0; padding: 0; border: 0; overflow-wrap: anywhere; }
+  [data-testid="inventory-table"] tbody td::before, [data-testid="customer-table"] tbody td::before, [data-testid="quotations-table"] tbody td::before { display: block; margin-bottom: 3px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  [data-testid="inventory-table"] tbody td:first-child, [data-testid="customer-table"] tbody td:first-child, [data-testid="quotations-table"] tbody td:first-child { grid-column: 1 / -1; padding-right: 28px; font-size: 15px; }
+  [data-testid="inventory-table"] tbody td:last-child, [data-testid="customer-table"] tbody td:last-child, [data-testid="quotations-table"] tbody td:last-child { position: absolute; top: 15px; right: 14px; }
+  [data-testid="inventory-table"] tbody td[colspan], [data-testid="customer-table"] tbody td[colspan], [data-testid="quotations-table"] tbody td[colspan] { grid-column: 1 / -1; position: static; padding: 0; }
+  [data-testid="inventory-table"] tbody td:nth-child(2)::before { content: 'Category'; }
+  [data-testid="inventory-table"] tbody td:nth-child(3)::before { content: 'Sale price'; }
+  [data-testid="inventory-table"] tbody td:nth-child(4)::before { content: 'Purchase price'; }
+  [data-testid="inventory-table"] tbody td:nth-child(5)::before { content: 'Stock'; }
+  [data-testid="inventory-table"] tbody td:nth-child(6)::before { content: 'HSN'; }
+  [data-testid="inventory-table"] tbody td:nth-child(7)::before { content: 'Status'; }
+  [data-testid="customer-table"] tbody td:nth-child(2)::before { content: 'Phone'; }
+  [data-testid="customer-table"] tbody td:nth-child(3)::before { content: 'Added'; }
+  [data-testid="customer-table"] tbody td:nth-child(4)::before { content: 'Total due'; }
+  [data-testid="customer-table"] tbody td:nth-child(5)::before { content: 'Status'; }
+  [data-testid="quotations-table"] tbody td:nth-child(2)::before { content: 'Customer'; }
+  [data-testid="quotations-table"] tbody td:nth-child(3)::before { content: 'Date'; }
+  [data-testid="quotations-table"] tbody td:nth-child(4)::before { content: 'Valid until'; }
+  [data-testid="quotations-table"] tbody td:nth-child(5)::before { content: 'Type'; }
+  [data-testid="quotations-table"] tbody td:nth-child(6)::before { content: 'Amount'; }
+  [data-testid="quotations-table"] tbody td:nth-child(7)::before { content: 'Status'; }
+  .reports-page .data-table { min-width: 0; }
+  .reports-page .data-table:has(th:nth-child(5)) { min-width: 560px; }
+  .reports-page .data-table th, .reports-page .data-table td { padding: 10px 8px; white-space: normal; overflow-wrap: anywhere; }
+  .modal-backdrop .app-modal:not(.bill-detail) { width: 100%; max-height: calc(100dvh - 12px); overflow-y: auto; padding-bottom: max(20px, env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; }
+  .bill-detail-backdrop { display: block; padding: 0; overflow: hidden; backdrop-filter: none; }
+  .app-modal.bill-detail { width: 100%; height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; box-shadow: none; padding-bottom: env(safe-area-inset-bottom); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; animation: none; }
+  .bill-detail-head { position: sticky; top: 0; z-index: 2; background: var(--surface); align-items: center; padding-top: max(14px, env(safe-area-inset-top)); padding-bottom: 14px; box-shadow: 0 3px 12px rgba(15, 23, 42, .04); }
+  .bill-detail-head h2 { margin-bottom: 2px; }
+  .bill-detail-head p { font-size: 12px; line-height: 1.4; }
+  .bill-detail-close { flex: none; width: 44px; height: 44px; background: var(--bg); }
+  .bill-detail-mobile-summary { display: flex; flex-direction: column; gap: 3px; padding: 18px 16px; background: var(--ink); color: #fff; }
+  .bill-detail-mobile-summary span { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: #cbd5e1; font-weight: 700; }
+  .bill-detail-mobile-summary strong { font-family: var(--font-display); font-size: 30px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .bill-detail-mobile-summary small { font-size: 13px; color: #cbd5e1; }
+  .bill-detail-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 12px; padding-bottom: 12px; }
+  .bill-detail-actions > button:not(.bill-detail-more-toggle) { width: 100%; min-height: 46px; padding: 0 8px; }
+  .bill-detail-actions .bill-detail-more-toggle { display: block; grid-column: 1 / -1; border: 0; background: none; color: var(--blue-dark); text-align: left; font-size: 13px; font-weight: 700; padding: 8px; min-height: 40px; }
+  .bill-detail-secondary-actions { display: none; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .bill-detail-secondary-actions.is-open { display: grid; }
+  .bill-detail-secondary-actions button { width: 100%; min-height: 44px; padding: 0 8px; }
+  .bill-detail-secondary-actions button.danger { grid-column: 1 / -1; }
+  .bill-detail-item-table { display: none; }
+  .bill-detail-item-list { display: block; margin: 18px 16px 0; border: 1px solid var(--line-soft); border-radius: 16px; overflow: hidden; }
+  .bill-detail-item-list h3 { padding: 13px 14px; display: flex; justify-content: space-between; gap: 8px; background: var(--bg); border-bottom: 1px solid var(--line-soft); font-size: 14px; }
+  .bill-detail-item-list h3 span { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .bill-detail-item { padding: 14px; border-top: 1px solid var(--line-soft); }
+  .bill-detail-item:first-of-type { border-top: 0; }
+  .bill-detail-item-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .bill-detail-item-title > span { color: var(--muted); font-size: 12px; }
+  .bill-detail-item-title strong { flex: 1; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+  .bill-detail-item-title b { flex: none; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .bill-detail-item-meta { display: flex; flex-wrap: wrap; gap: 5px 12px; margin: 7px 0 0 20px; color: var(--muted); font-size: 12px; }
+  .bill-detail-item > small { display: block; margin: 6px 0 0 20px; color: var(--muted); font-size: 12px; }
+  .bill-detail-totals { padding-top: 18px; }
+  .bill-timeline { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+  .note-form button { min-height: 44px; }
+}
+@media (max-width: 600px) {
+  .customer-highlight { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .customer-highlight > div { padding: 14px; min-width: 0; }
+  .customer-highlight > div:first-child { border-right: 1px solid var(--line-soft); }
+  .customer-highlight > div:nth-child(2) { border-bottom: 1px solid var(--line-soft); }
+  .customer-highlight > div:last-child { grid-column: 1 / -1; border-bottom: 0; }
+  .customer-highlight strong { font-size: 23px; }
+}
+@media (max-width: 390px) {
+  .admin-header .header-actions { gap: 4px; }
+  .admin-header .header-primary { padding: 0 9px !important; }
+  .admin-header .user-avatar { display: none; }
+  .floating-cart-bar { padding-left: 12px; }
+  .floating-cart-bar > span { font-size: 0; gap: 0; }
+  .floating-cart-bar > span svg { width: 18px; height: 18px; }
+  .bill-card-mid { flex-wrap: wrap; }
+  .bill-card-total { margin-left: auto; }
+  .cart-item-controls .mini-input { flex: 1 1 42%; }
+  .mini-input input { width: 100% !important; min-width: 0; }
 }
 @media print {
   .admin-sidebar, .admin-header, .page-title-actions, .report-tabs, .report-range, .floating-whatsapp, .floating-cart-bar, .mobile-tabs { display: none !important; }

@@ -60,7 +60,7 @@ export default function Bills() {
     </div>
 
     <div className="bills-filters" data-testid="bills-filters">
-      <div className="table-search"><Search size={18} /><Input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search bill number, customer, phone or item name…" data-testid="bills-search-input" /></div>
+      <div className="table-search"><Search size={18} /><Input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search bills, customers or items" aria-label="Search bill history" data-testid="bills-search-input" /></div>
       <div className="range-pills" data-testid="bills-range-pills">{RANGES.map(([key, label]) => <button type="button" key={key} className={filters.range === key ? 'active' : ''} data-testid={`bills-range-${key}`} onClick={() => update({ range: key })}>{label}</button>)}</div>
       {filters.range === 'custom' && <div className="custom-date-inputs" data-testid="bills-custom-range"><Input type="date" value={filters.start} data-testid="bills-start-date" onChange={e => update({ start: e.target.value })} /><span>to</span><Input type="date" value={filters.end} data-testid="bills-end-date" onChange={e => update({ end: e.target.value })} /></div>}
       <div className="filter-selects">
@@ -87,11 +87,13 @@ export default function Bills() {
         </tr>) : <tr><td colSpan="8"><div className="table-empty" data-testid="bills-empty">{loading ? <span>Loading bills…</span> : <><History size={30} /><strong>{activeFilters ? 'No bills match these filters' : 'No bills yet'}</strong><span>{activeFilters ? 'Try a wider date range or clear the filters.' : 'Your first sale will appear here the moment it is saved.'}</span></>}</div></td></tr>}</tbody>
       </table>
     </div>
-    <div className="bill-cards" data-testid="bills-cards">{data.items.map(bill => <article key={bill.id} className={`bill-card ${bill.status === 'cancelled' ? 'is-cancelled' : ''}`} data-testid={`bill-card-${bill.id}`} onClick={() => navigate(`/admin/bills/${bill.id}`)}>
-      <div className="bill-card-top"><strong className="mono">{bill.number}</strong><span className={`status-pill ${bill.status}`}>{bill.status === 'cancelled' ? <Ban size={11} /> : <ReceiptText size={11} />} {bill.status}</span></div>
-      <div className="bill-card-mid"><div><strong>{bill.customerName || 'Walk-in Customer'}</strong><small>{dateTime(bill.date)} · {bill.items.length} items · {MODES[bill.paymentMode] || bill.paymentMode}</small></div><strong className="bill-card-total">{currency(bill.grandTotal)}</strong></div>
-      <div className="bill-card-actions"><span className={`doc-pill ${bill.includeGst ? 'gst' : ''}`}>{bill.includeGst ? 'Tax invoice' : 'Estimate'}</span>{bill.dueAmount > 0 && <span className="status-pill low">Due {currency(bill.dueAmount)}</span>}<button type="button" aria-label={`Print ${bill.number}`} onClick={e => print(bill, e)}><Printer size={17} /></button><button type="button" aria-label={`Share ${bill.number}`} onClick={e => share(bill, e)}><MessageCircle size={17} /></button><button type="button" aria-label={`Open ${bill.number}`}><ArrowRight size={17} /></button></div>
-    </article>)}</div>
+    <div className="bill-cards" data-testid="bills-cards">{data.items.map(bill => <article key={bill.id} className={`bill-card ${bill.status === 'cancelled' ? 'is-cancelled' : ''}`} data-testid={`bill-card-${bill.id}`}>
+      <button type="button" className="bill-card-open" aria-label={`Open bill ${bill.number}`} onClick={() => navigate(`/admin/bills/${bill.id}`)}>
+        <span className="bill-card-top"><strong className="mono">{bill.number}</strong><span className={`status-pill ${bill.status}`}>{bill.status === 'cancelled' ? <Ban size={11} /> : <ReceiptText size={11} />} {bill.status}</span></span>
+        <span className="bill-card-mid"><span><strong>{bill.customerName || 'Walk-in Customer'}</strong><small>{dateTime(bill.date)} · {bill.items.length} item{bill.items.length !== 1 ? 's' : ''} · {MODES[bill.paymentMode] || bill.paymentMode}</small></span><strong className="bill-card-total">{currency(bill.grandTotal)}</strong></span>
+      </button>
+      <div className="bill-card-actions"><span className={`doc-pill ${bill.includeGst ? 'gst' : ''}`}>{bill.includeGst ? 'Tax invoice' : 'Estimate'}</span>{bill.dueAmount > 0 && <span className="status-pill low">Due {currency(bill.dueAmount)}</span>}<button type="button" aria-label={`Print ${bill.number}`} onClick={e => print(bill, e)}><Printer size={17} /></button><button type="button" aria-label={`Share ${bill.number}`} onClick={e => share(bill, e)}><MessageCircle size={17} /></button><button type="button" aria-label={`Open ${bill.number}`} onClick={() => navigate(`/admin/bills/${bill.id}`)}><ArrowRight size={17} /></button></div>
+    </article>)}{!data.items.length && <div className="table-empty" data-testid="bills-mobile-empty">{loading ? <span>Loading bills…</span> : <><History size={28} /><strong>{activeFilters ? 'No bills match these filters' : 'No bills yet'}</strong><span>{activeFilters ? 'Try a wider date range or clear the filters.' : 'Your first saved bill will appear here.'}</span></>}</div>}</div>
 
     <div className="table-footer" data-testid="bills-pagination">
       <span data-testid="bills-total-count">{data.total} bill{data.total !== 1 ? 's' : ''}{data.total > 0 && ` · page ${page} of ${data.pages}`}</span>
