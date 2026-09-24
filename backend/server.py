@@ -12,29 +12,16 @@ from core import client, bootstrap  # noqa: E402
 from api_auth import router as auth_router  # noqa: E402
 from api_inventory import router as inventory_router  # noqa: E402
 from api_sales import router as sales_router  # noqa: E402
+from cors_config import parse_cors_origins  # noqa: E402
 
 app = FastAPI(title="Asian Hardware and Paints")
-# The storefront and API are served from the same origin. Enable credentialed
-# cross-origin requests only for explicit, configured origins—not a wildcard.
-cors_env = os.environ.get("CORS_ORIGINS", "").strip()
-allowed_origins = []
-for item in cors_env.split(","):
-    item = item.strip().rstrip("/")
-    if not item or item in ("*", "value"):
-        continue
-    if not item.startswith("http://") and not item.startswith("https://"):
-        allowed_origins.append(f"https://{item}")
-        allowed_origins.append(f"http://{item}")
-    else:
-        allowed_origins.append(item)
-
-# Comprehensive regex matching: localhost, any *.vercel.app, and any *.2up.in domain
-cors_regex = r"^https?://(localhost|127\.0\.0\.1|(.*\.)?vercel\.app|(.*\.)?2up\.in)(:\d+)?$"
+# Browsers send an exact scheme/host/port Origin. Only the configured frontend
+# origins may use the session cookie across origins.
+allowed_origins = parse_cors_origins(os.environ.get("CORS_ORIGINS"))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins if allowed_origins else [],
-    allow_origin_regex=cors_regex,
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

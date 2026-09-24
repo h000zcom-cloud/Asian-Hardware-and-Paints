@@ -110,7 +110,7 @@ Go to [http://localhost:3000/login](http://localhost:3000/login) → Login with 
    - `MONGO_URL` = your MongoDB Atlas connection string
    - `DB_NAME` = `asian_hardware`
    - `JWT_SECRET` = a long random string
-   - `CORS_ORIGINS` = your Vercel URL (e.g., `https://asian-hardware.vercel.app`)
+   - `CORS_ORIGINS` = optional comma-separated extra frontend origins (the production `https://ah.2up.in` origin is always allowed; add a Vercel preview URL or `https://www.ah.2up.in` only if that exact origin is used)
 5. Deploy!
 
 ### Alternative: Backend → Render
