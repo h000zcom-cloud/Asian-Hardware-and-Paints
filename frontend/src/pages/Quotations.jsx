@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, Download, FileText, MessageCircle, Plus, Printer, Search } from 'lucide-react';
 import { api, currency, dateOnly, downloadPdf, errorText, printPdf, whatsappText } from '../lib/api';
@@ -106,8 +106,8 @@ export default function Quotations() {
     </div>
     <div className="data-table-scroll"><table className="data-table" data-testid="quotations-table">
       <thead><tr><th>Quotation</th><th>Customer</th><th>Date</th><th>Valid until</th><th>Type</th><th>Amount</th><th>Status</th><th /></tr></thead>
-      <tbody>{filtered.length ? filtered.map(q => <tr key={q.id} data-testid={`quotation-row-${q.id}`} role="link" tabIndex={0} aria-label={`Open quotation ${q.number}`} onClick={() => navigate(`/admin/quotations/${q.id}`)} onKeyDown={e => { if (e.key === 'Enter') navigate(`/admin/quotations/${q.id}`); }}>
-        <td className="mono strong">{q.number}</td><td><strong>{q.customerName}</strong>{q.customerPhone && <small className="table-sub">{q.customerPhone}</small>}</td><td>{dateOnly(q.date)}</td><td>{dateOnly(q.validUntil)}</td>
+      <tbody>{filtered.length ? filtered.map(q => <tr key={q.id} data-testid={`quotation-row-${q.id}`} onClick={e => { if (!e.target.closest('a')) navigate(`/admin/quotations/${q.id}`); }}>
+        <td className="mono strong"><Link to={`/admin/quotations/${q.id}`} aria-label={`Open quotation ${q.number}`}>{q.number}</Link></td><td><strong>{q.customerName}</strong>{q.customerPhone && <small className="table-sub">{q.customerPhone}</small>}</td><td>{dateOnly(q.date)}</td><td>{dateOnly(q.validUntil)}</td>
         <td><span className={`doc-pill ${q.includeGst ? 'gst' : ''}`}>{q.includeGst ? 'With GST' : 'Estimate'}</span></td><td className="mono strong">{currency(q.grandTotal)}</td><td><span className={`status-pill ${q.status}`}>{q.status}</span></td><td><ArrowRight size={17} /></td>
       </tr>) : <tr><td colSpan="8"><div className="table-empty"><FileText size={30} /><strong>No quotations yet</strong><span>Create one to get started.</span></div></td></tr>}</tbody>
     </table></div>
