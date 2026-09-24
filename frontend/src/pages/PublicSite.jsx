@@ -4,6 +4,7 @@ import { ArrowDownRight, ArrowRight, BadgeCheck, Brush, Building2, ChevronRight,
 import { toast } from 'sonner';
 import { api, errorText } from '../lib/api';
 import { BrandMark } from '../components/BrandMark';
+import { PoweredBy } from '../components/PoweredBy';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
@@ -154,7 +155,7 @@ export default function PublicSite() {
         <span>© {new Date().getFullYear()} Asian Hardware and Paints. All Rights Reserved.</span>
         <span className="secured"><ShieldCheck size={14} /> Secured</span>
         <span>Designed by <a href="https://dragosaurabh.com/" target="_blank" rel="noopener noreferrer" data-testid="footer-designer-link">Dragosaurabh</a></span>
-        <span>Powered by <a href="https://ready2up.com/" target="_blank" rel="noopener noreferrer" data-testid="footer-powered-link">Ready2UP</a></span>
+        <PoweredBy testId="footer-powered-link" />
       </div>
       <p className="imagery-disclosure">Store and product photography on this site is illustrative.</p>
     </div></footer>
