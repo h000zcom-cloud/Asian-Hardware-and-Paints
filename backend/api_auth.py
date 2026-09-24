@@ -21,15 +21,29 @@ async def login(payload: LoginInput, request: Request, response: Response):
     user = await db.users.find_one({"username": payload.username}, {"_id": 0})
     if not user or not verify_password(payload.password, user["passwordHash"]):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
-    secure = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
-    response.set_cookie("ah_session", issue_token(user), httponly=True, secure=secure,
-                        samesite="lax", max_age=12 * 3600, path="/")
-    return {"username": user["username"], "name": user["name"]}
+    is_https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https" or request.url.scheme == "https"
+    token = issue_token(user)
+    response.set_cookie(
+        "ah_session",
+        token,
+        httponly=True,
+        secure=True if is_https else False,
+        samesite="none" if is_https else "lax",
+        max_age=12 * 3600,
+        path="/"
+    )
+    return {"username": user["username"], "name": user["name"], "token": token}
 
 
 @router.post("/logout")
-async def logout(response: Response):
-    response.delete_cookie("ah_session", path="/")
+async def logout(request: Request, response: Response):
+    is_https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https" or request.url.scheme == "https"
+    response.delete_cookie(
+        "ah_session",
+        path="/",
+        secure=True if is_https else False,
+        samesite="none" if is_https else "lax"
+    )
     return {"ok": True}
 
 

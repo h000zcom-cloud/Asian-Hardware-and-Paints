@@ -2,8 +2,38 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { fillPrintWindow, openPrintWindow } from './print';
 
-if (!process.env.REACT_APP_BACKEND_URL) throw new Error('REACT_APP_BACKEND_URL is required');
-export const api = axios.create({ baseURL: `${process.env.REACT_APP_BACKEND_URL}/api`, withCredentials: true });
+export const BACKEND_URL = (
+  process.env.REACT_APP_BACKEND_URL ||
+  process.env.REACT_APP_BACKEND_URI ||
+  'https://asian-hardware-and-paints.onrender.com'
+).replace(/\/$/, '');
+
+export const api = axios.create({
+  baseURL: `${BACKEND_URL}/api`,
+  withCredentials: true,
+});
+
+api.interceptors.request.use((config) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('ah_token') : null;
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      const url = error.config?.url || '';
+      if (!url.endsWith('/auth/me')) {
+        localStorage.removeItem('ah_token');
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const currency = value => `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const price = value => Number(value || 0) % 1 === 0 ? `₹${Number(value || 0).toLocaleString('en-IN')}` : currency(value);

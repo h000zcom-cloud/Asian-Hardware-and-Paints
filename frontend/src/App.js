@@ -24,7 +24,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => { api.get('/auth/me').then(r => setUser(r.data)).catch(() => {}).finally(() => setLoading(false)); }, []);
-  const signOut = async () => { await api.post('/auth/logout'); setUser(null); };
+  const signOut = async () => { try { await api.post('/auth/logout'); } catch (_) {} localStorage.removeItem('ah_token'); setUser(null); };
   return <BrowserRouter>
     <Toaster richColors position="top-right" />
     <Routes>
@@ -42,7 +42,7 @@ function App() {
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<Customers />} />
         <Route path="reports" element={<Reports />} />
-        <Route path="settings" element={<Settings onPasswordChanged={() => setUser(null)} />} />
+        <Route path="settings" element={<Settings onPasswordChanged={() => { localStorage.removeItem('ah_token'); setUser(null); }} />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

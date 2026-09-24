@@ -17,26 +17,28 @@ app = FastAPI(title="Asian Hardware and Paints")
 # The storefront and API are served from the same origin. Enable credentialed
 # cross-origin requests only for explicit, configured origins—not a wildcard.
 cors_env = os.environ.get("CORS_ORIGINS", "").strip()
-allowed_origins = [origin.strip() for origin in cors_env.split(",")
-                   if origin.strip() and origin.strip() not in ("*", "value")]
+allowed_origins = []
+for item in cors_env.split(","):
+    item = item.strip().rstrip("/")
+    if not item or item in ("*", "value"):
+        continue
+    if not item.startswith("http://") and not item.startswith("https://"):
+        allowed_origins.append(f"https://{item}")
+        allowed_origins.append(f"http://{item}")
+    else:
+        allowed_origins.append(item)
 
-if allowed_origins:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=allowed_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-else:
-    # Auto-allow localhost and any Vercel deployment URL
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|.*\.vercel\.app)(:\d+)?",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# Comprehensive regex matching: localhost, any *.vercel.app, and any *.2up.in domain
+cors_regex = r"^https?://(localhost|127\.0\.0\.1|(.*\.)?vercel\.app|(.*\.)?2up\.in)(:\d+)?$"
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins if allowed_origins else [],
+    allow_origin_regex=cors_regex,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(auth_router, prefix="/api")
 app.include_router(inventory_router, prefix="/api")
 app.include_router(sales_router, prefix="/api")

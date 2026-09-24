@@ -58,6 +58,10 @@ def authorize(principal, action):
 async def require_admin(request: Request):
     token = request.cookies.get("ah_session")
     if not token:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+    if not token:
         raise HTTPException(status_code=401, detail="Please sign in")
     try:
         claims = jwt.decode(token, SECRET, algorithms=["HS256"])
