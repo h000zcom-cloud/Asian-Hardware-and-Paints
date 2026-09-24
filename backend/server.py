@@ -16,12 +16,23 @@ from api_sales import router as sales_router  # noqa: E402
 app = FastAPI(title="Asian Hardware and Paints")
 # The storefront and API are served from the same origin. Enable credentialed
 # cross-origin requests only for explicit, configured origins—not a wildcard.
-allowed_origins = [origin.strip() for origin in os.environ.get("CORS_ORIGINS", "").split(",")
-                   if origin.strip() and origin.strip() != "*"]
+cors_env = os.environ.get("CORS_ORIGINS", "").strip()
+allowed_origins = [origin.strip() for origin in cors_env.split(",")
+                   if origin.strip() and origin.strip() not in ("*", "value")]
+
 if allowed_origins:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    # Auto-allow localhost and any Vercel deployment URL
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|.*\.vercel\.app)(:\d+)?",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

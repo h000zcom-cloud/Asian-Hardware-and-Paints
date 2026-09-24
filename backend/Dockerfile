@@ -17,5 +17,6 @@ COPY . .
 # Expose the port
 EXPOSE 8001
 
-# Run with uvicorn
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
+# Run with uvicorn (dynamic port for Render/Railway/Cloud)
+CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-8001}"]
+
